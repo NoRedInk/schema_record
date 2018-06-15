@@ -1,0 +1,17 @@
+{
+    "description": "A person",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "appearance": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "height": { "type": "number" },
+                "weight": { "type": "number" }
+            }
+        }
+    }
+}
