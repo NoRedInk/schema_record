@@ -1,0 +1,9 @@
+{
+    "description": "A person",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" }
+    }
+}
