@@ -90,7 +90,7 @@ RSpec.describe SchemaRecord::Base do
   end
 
   context "with a property of {type: object} (i.e. nesting)" do
-    it "can be initialized and read from using nested data" do
+    it "can be initialized (and read) given nested data" do
       person_record = Class.new(SchemaRecord::Base) do
         json_schema_file 'schemas/complex_person.json'
       end
@@ -110,6 +110,28 @@ RSpec.describe SchemaRecord::Base do
       expect(person.appearance.height).to eq 80
       expect(person.appearance.weight).to eq 4000
       expect { person.appearance.unexpected }.to raise_error(NoMethodError)
+    end
+  end
+
+  context "when the schema specifies an array of objects" do
+    it "can be initialized (and read) given json objects in an array" do
+      computer_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/computer.json'
+      end
+
+      computer = computer_record.new(
+        cpu: "intel",
+        ram: 16,
+        drives: [
+          { capacity: "2T", rpm: 7200 },
+          { capacity: "2T", rpm: 15000 },
+        ]
+      )
+
+      expect(computer.cpu).to eq "intel"
+      expect(computer.ram).to eq 16
+      expect(computer.drives.first).to have_attributes(capacity: "2T", rpm: 7200)
+      expect(computer.drives.last).to have_attributes(capacity: "2T", rpm: 15000)
     end
   end
 end

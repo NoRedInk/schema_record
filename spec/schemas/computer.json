@@ -1,0 +1,20 @@
+{
+    "description": "A computer",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "cpu": { "type": "string" },
+        "ram": { "type": "number" },
+        "drives": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "capacity": { "type": "string" },
+                    "rpm": { "type": "integer" }
+                }
+            }
+        }
+    }
+}
