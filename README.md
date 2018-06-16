@@ -98,6 +98,11 @@ kat.birthdate # ==> "August 26, 1918"
 kat.notInData # ==> raises NoMethodError
 ```
 
+## Not Yet Supported
+- objects within a list
+- $ref
+- patternProperties
+- oneOf
 
 
 ## Installation
