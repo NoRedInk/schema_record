@@ -99,7 +99,7 @@ kat.notInData # ==> raises NoMethodError
 ```
 
 ## Not Yet Supported
-- objects within a list
+- optional null
 - $ref
 - patternProperties
 - oneOf

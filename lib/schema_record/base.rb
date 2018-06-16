@@ -41,15 +41,8 @@ module SchemaRecord
               json_schema_hash spec
             end
           when 'array'
-            if spec['items']
-              case spec['items']['type']
-              when 'object'
-                arrays_of_objects[attr] = Class.new(SchemaRecord::Base) do
-                  json_schema_hash spec['items']
-                end
-              when 'array'
-                # TODO: how to support array of ... array of objects???
-              end
+            array_schemas[attr] = Class.new(SchemaRecord::Array) do
+              json_schema_hash spec['items']
             end
           end
         end
@@ -85,21 +78,24 @@ module SchemaRecord
       self.class.nested_objects
     end
 
-    def self.arrays_of_objects
-      @arrays_of_objects ||= {}
+    def self.array_schemas
+      @array_schemas ||= {}
     end
 
-    def arrays_of_objects
-      self.class.arrays_of_objects
+    def array_schemas
+      self.class.array_schemas
     end
 
     private
-    def set_value(attr, value)
-      if nested_objects[attr.to_s]
-        value = nested_objects[attr.to_s].new value
-      elsif arrays_of_objects[attr.to_s]
-        value.map! { |val| arrays_of_objects[attr.to_s].new val }
-      end
+    def set_value(attr, arg)
+      value =
+        if nested_objects[attr.to_s]
+          nested_objects[attr.to_s].new arg
+        elsif array_schemas[attr.to_s]
+          arg.map { |item| array_schemas[attr.to_s].initialize_item item }
+        else
+          arg
+        end
 
       self.instance_variable_set("@#{attr}", value)
     end

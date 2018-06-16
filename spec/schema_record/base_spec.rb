@@ -113,7 +113,7 @@ RSpec.describe SchemaRecord::Base do
     end
   end
 
-  context "when the schema specifies an array of objects" do
+  context "when the schema specifies an array" do
     it "can be initialized (and read) given json objects in an array" do
       computer_record = Class.new(SchemaRecord::Base) do
         json_schema_file 'schemas/computer.json'
@@ -132,6 +132,40 @@ RSpec.describe SchemaRecord::Base do
       expect(computer.ram).to eq 16
       expect(computer.drives.first).to have_attributes(capacity: "2T", rpm: 7200)
       expect(computer.drives.last).to have_attributes(capacity: "2T", rpm: 15000)
+    end
+
+    it "can be initialized (and read) given json objects in an array of arrays" do
+      gameboard_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/gameboard.json'
+      end
+
+      gameboard = gameboard_record.new(
+        game: 'zuxzoog',
+        board: [
+          [
+            { piece: 'triangle', player: 1 },
+            { piece: 'square', player: 2 }
+          ],
+          [
+            { piece: 'triangle', player: 2 },
+            { piece: 'hexagon', player: 1 }
+          ]
+        ]
+      )
+
+      expect(gameboard.game).to eq 'zuxzoog'
+      expect(gameboard.board[0][0]).to have_attributes(
+        piece: 'triangle', player: 1
+      )
+      expect(gameboard.board[0][1]).to have_attributes(
+        piece: 'square', player: 2
+      )
+      expect(gameboard.board[1][0]).to have_attributes(
+        piece: 'triangle', player: 2
+      )
+      expect(gameboard.board[1][1]).to have_attributes(
+        piece: 'hexagon', player: 1
+      )
     end
   end
 end

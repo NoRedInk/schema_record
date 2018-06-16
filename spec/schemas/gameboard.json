@@ -1,0 +1,22 @@
+{
+    "description": "A poorly designed schema for a board game",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "game": { "type": "string" },
+        "board": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "piece": { "type": "string" },
+                        "player": { "type": "integer" }
+                    }
+                }
+            }
+        }
+    }
+}
