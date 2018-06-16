@@ -1,8 +1,104 @@
 # SchemaRecord
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/schema_record`. To experiment with that code, run `bin/console` for an interactive prompt.
+Are you tired of receiving json from the front-end and having to access it as a hash? Do you wish you could access that data using Ruby objects, accessor methods, and receive a NoMethodError when trying to access an attribute that doesn't exist? Well, then SchemaRecord is the gem for you!
 
-TODO: Delete this and the text above, and describe your gem
+
+## Usage
+
+Let's say you've invented the newest social media craze, Twinter: twitter for winter lovers. When a user submits a new post, it has the following schema:
+
+```json
+// post-schema.json
+{
+    "description": "A Twinter post",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "content": { "type": "string" },
+        "userId": { "type": "integer" },
+        "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "localTemp": { "type": "number" },
+                "snowFall": { "type": "number" }
+            }
+        }
+    }
+}
+```
+
+If we create a new SchemaRecord model, we can access any json that fits this schema using ruby objects.
+
+```ruby
+class TwinterPost < SchemaRecord::Base
+    json_schema_file "path/to/post-schema.json"
+end
+
+post_data = {
+    "content" => "Hello world.",
+    "userId" => 1,
+    "metadata" => {
+        "localTemp" => 4,
+        "snowFall" => 3.2
+    }
+}
+
+post = TwinterPost.new post_data
+
+post.content            # ==> "Hello world."
+post.userId             # ==> 1
+post.metadata.localTemp # ==> 4
+post.metadata.snowFall  # ==> 3.2
+post.notInSchema # ==> raises a NoMethodError
+post.metadata # ==> a record that inherits from SchemaRecord::Base
+```
+
+### Beware of forgetting to set "additionalProperties" to false
+
+SchemaRecord respects json schemas definition of `additionalProperties`. That means, if you don't set it at all, it will allow your record to be initialized with any attribute name. For example, this schema does not set additionalProperties to `false`.
+
+```json
+// person-schema.json
+{
+    "description": "A person",
+    "type": "object",
+    "properties": {
+        "name": { "type": "string" },
+        "userId": { "type": "integer" }
+    }
+}
+```
+
+A record defined using this schema can be initialized with any attributes:
+
+```ruby
+class Person < SchemaRecord::Base
+    json_schema_file "path/to/person-schema.json"
+end
+
+data = {
+    "name" => "Katherine Johnson",
+    "userId" => 1,
+    "employer" => "NASA",
+    "birthdate" => "August 26, 1918"
+}
+
+kat = TwinterPost.new data
+
+# attributes defined in the schema
+kat.name      # ==> "Katherine Johnson"
+kat.userId    # ==> 1
+
+# attributes not in the schema, but in the `data`
+kat.employer  # ==> "NASA"
+kat.birthdate # ==> "August 26, 1918"
+
+# attribute neither in the schema nor `data`
+kat.notInData # ==> raises NoMethodError
+```
+
+
 
 ## Installation
 
@@ -19,10 +115,6 @@ And then execute:
 Or install it yourself as:
 
     $ gem install schema_record
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
