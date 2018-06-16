@@ -98,6 +98,10 @@ kat.birthdate # ==> "August 26, 1918"
 kat.notInData # ==> raises NoMethodError
 ```
 
+### This is not a schema validator
+
+Defining and initializing a SchemaRecord instance *does not* validate that the data you are passing in fits the specified schema. If the data *does* align with the schema, the resulting SchemaRecord will behave as expected. If the data being used to initialize a SchemaRecord model does *not* align with the specified schema, **the resulting behavior is undefined!**
+
 ## Not Yet Supported
 - optional null
 - $ref
