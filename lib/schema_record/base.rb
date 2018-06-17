@@ -39,11 +39,11 @@ module SchemaRecord
     def self.json_schema_hash(schema)
       @additional_properties = schema['additionalProperties'] != false
 
-      properties = schema['properties']
+      props = schema['properties']
 
-      if properties.is_a?(Hash)
-        define_properties(properties.keys)
-        properties.each do |prop, spec|
+      if props.is_a?(Hash)
+        define_properties(props.keys)
+        props.each do |prop, spec|
           Array(spec['type']).each do |type|
             case type
             when 'object'
