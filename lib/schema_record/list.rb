@@ -1,6 +1,8 @@
 module SchemaRecord
   class List
     def self.json_schema_hash(schema)
+      return unless schema.is_a?(Hash)
+
       Array(schema['type']).each do |type|
         case type
         when 'object'

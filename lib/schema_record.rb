@@ -1,6 +1,6 @@
 require "schema_record/version"
 require "schema_record/base"
-require "schema_record/array"
+require "schema_record/list"
 require "schema_record/config"
 require "schema_record/invalid_schema_error"
 

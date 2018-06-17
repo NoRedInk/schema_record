@@ -20,14 +20,14 @@ module SchemaRecord
       schema_string = File.read(fullpath)
       schema = JSON.parse(schema_string)
 
+      unless Array(schema['type']).include? 'object'
+        raise InvalidSchemaError.new("top-level of json schema must be type: object")
+      end
+
       json_schema_hash(schema)
     end
 
     def self.json_schema_hash(schema)
-      unless schema['type'] == 'object'
-        raise InvalidSchemaError.new("top-level of json schema must be type: object")
-      end
-
       @additional_properties = schema['additionalProperties'] != false
 
       properties = schema['properties']
@@ -35,14 +35,16 @@ module SchemaRecord
       if properties.is_a?(Hash)
         define_attributes(properties.keys)
         properties.each do |attr, spec|
-          case spec['type']
-          when 'object'
-            nested_objects[attr] = Class.new(SchemaRecord::Base) do
-              json_schema_hash spec
-            end
-          when 'array'
-            array_schemas[attr] = Class.new(SchemaRecord::Array) do
-              json_schema_hash spec['items']
+          Array(spec['type']).each do |type|
+            case type
+            when 'object'
+              nested_objects[attr] = Class.new(SchemaRecord::Base) do
+                json_schema_hash spec
+              end
+            when 'array'
+              array_schemas[attr] = Class.new(SchemaRecord::List) do
+                json_schema_hash spec['items']
+              end
             end
           end
         end
@@ -89,9 +91,9 @@ module SchemaRecord
     private
     def set_value(attr, arg)
       value =
-        if nested_objects[attr.to_s]
+        if arg.is_a?(Hash) && nested_objects[attr.to_s]
           nested_objects[attr.to_s].new arg
-        elsif array_schemas[attr.to_s]
+        elsif arg.is_a?(Array) && array_schemas[attr.to_s]
           arg.map { |item| array_schemas[attr.to_s].initialize_item item }
         else
           arg

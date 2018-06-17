@@ -168,4 +168,90 @@ RSpec.describe SchemaRecord::Base do
       )
     end
   end
+
+  context "multiple types" do
+    it "can assign an attribute as an object or null" do
+      person_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/complex_person_with_nulls.json'
+      end
+
+      ironman = person_record.new(
+        firstName: 'Iron',
+        lastName: 'Man',
+        appearance: {
+          height: 80,
+          weight: 4000
+        }
+      )
+
+      curie = person_record.new(
+        firstName: "Marie",
+        lastName: "Curie",
+        appearance: nil
+      )
+
+      expect(ironman.firstName).to eq 'Iron'
+      expect(ironman.lastName).to eq 'Man'
+      expect(ironman.appearance.height).to eq 80
+      expect(ironman.appearance.weight).to eq 4000
+
+      expect(curie.firstName).to eq 'Marie'
+      expect(curie.lastName).to eq 'Curie'
+      expect(curie.appearance).to be_nil
+    end
+
+    it "can assign an attribute as a list or null" do
+      computer_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/computer_with_nulls.json'
+      end
+
+      computer = computer_record.new(
+        cpu: "intel",
+        ram: 16,
+        drives: [
+          { capacity: "2T", rpm: 7200 },
+          { capacity: "2T", rpm: 15000 },
+        ]
+      )
+
+      parts = computer_record.new(
+        cpu: "amd",
+        ram: 8,
+        drives: nil
+      )
+
+      expect(computer.cpu).to eq "intel"
+      expect(computer.ram).to eq 16
+      expect(computer.drives.first).to have_attributes(capacity: "2T", rpm: 7200)
+      expect(computer.drives.last).to have_attributes(capacity: "2T", rpm: 15000)
+
+      expect(parts.cpu).to eq 'amd'
+      expect(parts.ram).to eq 8
+      expect(parts.drives).to eq nil
+    end
+
+    it "can assign a list of objects, lists, or nulls" do
+      jabberwocky_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/jabberwocky.json'
+      end
+
+      jabberwocky = jabberwocky_record.new(
+        wabe: [
+          ["gyre", "gimble"],
+          nil,
+          {
+            jaws: "bite",
+            claws: "catch"
+          }
+        ]
+      )
+
+      expect(jabberwocky.wabe[0]).to eq ["gyre", "gimble"]
+
+      expect(jabberwocky.wabe[1]).to be_nil
+
+      expect(jabberwocky.wabe[2].jaws).to eq 'bite'
+      expect(jabberwocky.wabe[2].claws).to eq 'catch'
+    end
+  end
 end

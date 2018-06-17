@@ -1,0 +1,13 @@
+{
+    "description": "nonsense inspired by the Jabberwocky poem",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "wabe": {
+            "type": "array",
+            "items": {
+                "type": ["object", "array", "null"]
+            }
+        }
+    }
+}
