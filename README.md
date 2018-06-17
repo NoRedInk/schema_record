@@ -102,10 +102,14 @@ kat.notInData # ==> raises NoMethodError
 
 Defining and initializing a SchemaRecord instance *does not* validate that the data you are passing in fits the specified schema. If the data *does* align with the schema, the resulting SchemaRecord will behave as expected. If the data being used to initialize a SchemaRecord model does *not* align with the specified schema, **the resulting behavior is undefined!**
 
-## Not Yet Supported
+## Parts of the JSON Schema Specification Not Yet Supported
 - $ref
 - oneOf
-
+- anyOf
+- allOf
+- not
+- [schema dependencies](https://spacetelescope.github.io/understanding-json-schema/reference/object.html#schema-dependencies)
+- [tuple validation](https://spacetelescope.github.io/understanding-json-schema/reference/object.html#schema-dependencies)
 
 ## Installation
 
