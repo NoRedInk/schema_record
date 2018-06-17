@@ -8,6 +8,15 @@ module SchemaRecord
         args.each do |prop, value|
           set_value(prop, value)
         end
+      elsif pattern_properties.any?
+        singleton_class.define_properties(properties)
+        singleton_class.define_pattern_properties(
+          args.keys.map(&:to_s),
+          pattern_properties
+        )
+        properties.each do |prop|
+          set_value(prop, args[prop.to_sym])
+        end
       else
         properties.each do |prop|
           set_value(prop, args[prop.to_sym])
@@ -42,7 +51,27 @@ module SchemaRecord
                 json_schema_hash spec
               end
             when 'array'
-              array_schemas[prop] = Class.new(SchemaRecord::List) do
+              nested_arrays[prop] = Class.new(SchemaRecord::List) do
+                json_schema_hash spec['items']
+              end
+            end
+          end
+        end
+      end
+
+      pattern_props = schema['patternProperties']
+
+      if pattern_props.is_a?(Hash)
+        @pattern_properties = pattern_props.keys
+        pattern_props.each do |pattern, spec|
+          Array(spec['type']).each do |type|
+            case type
+            when 'object'
+              nested_objects_by_pattern[pattern] = Class.new(SchemaRecord::Base) do
+                json_schema_hash spec
+              end
+            when 'array'
+              nested_arrays_by_pattern[pattern] = Class.new(SchemaRecord::List) do
                 json_schema_hash spec['items']
               end
             end
@@ -56,8 +85,17 @@ module SchemaRecord
       self.send :attr_reader, *props
     end
 
+    def self.define_pattern_properties(props, patterns)
+      props.each do |prop|
+        if patterns.any? { |pattern| Regexp.new(pattern).match(prop) }
+          properties << prop
+          self.send :attr_reader, prop
+        end
+      end
+    end
+
     def self.properties
-      @properties
+      @properties ||= []
     end
 
     def properties
@@ -72,6 +110,14 @@ module SchemaRecord
       self.class.additional_properties
     end
 
+    def self.pattern_properties
+      @pattern_properties ||= []
+    end
+
+    def pattern_properties
+      self.class.pattern_properties
+    end
+
     def self.nested_objects
       @nested_objects ||= {}
     end
@@ -80,26 +126,63 @@ module SchemaRecord
       self.class.nested_objects
     end
 
-    def self.array_schemas
-      @array_schemas ||= {}
+    def self.nested_arrays
+      @nested_arrays ||= {}
     end
 
-    def array_schemas
-      self.class.array_schemas
+    def nested_arrays
+      self.class.nested_arrays
+    end
+
+    def self.nested_objects_by_pattern
+      @nested_objects_by_pattern ||= {}
+    end
+
+    def nested_objects_by_pattern
+      self.class.nested_objects_by_pattern
+    end
+
+    def self.nested_arrays_by_pattern
+      @nested_arrays_by_pattern ||= {}
+    end
+
+    def nested_arrays_by_pattern
+      self.class.nested_arrays_by_pattern
     end
 
     private
     def set_value(prop, arg)
+      prop = prop.to_s
       value =
-        if arg.is_a?(Hash) && nested_objects[prop.to_s]
-          nested_objects[prop.to_s].new arg
-        elsif arg.is_a?(Array) && array_schemas[prop.to_s]
-          arg.map { |item| array_schemas[prop.to_s].initialize_item item }
+        case arg
+        when Hash
+          if nested_objects[prop]
+            nested_objects[prop].new arg
+          elsif record = matching_pattern(prop, nested_objects_by_pattern)
+            record.new arg
+          else
+            arg
+          end
+        when Array
+          if nested_arrays[prop]
+            arg.map { |item| nested_arrays[prop].initialize_item item }
+          elsif array_schema = matching_pattern(prop, nested_arrays_by_pattern)
+            arg.map { |item| array_schema.initialize_item item }
+          else
+            arg
+          end
         else
           arg
         end
 
       self.instance_variable_set("@#{prop}", value)
+    end
+
+    def matching_pattern(prop, patterns)
+      patterns.each do |pattern, schema_obj|
+        return schema_obj if Regexp.new(pattern).match(prop)
+      end
+      return nil
     end
   end
 end

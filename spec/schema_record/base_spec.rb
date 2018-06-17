@@ -69,6 +69,54 @@ RSpec.describe SchemaRecord::Base do
     end
   end
 
+  context "with patternProperties" do
+    it "can be initialized only with defined properties" do
+      cast_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/cast.json'
+      end
+
+      cast = cast_record.new(
+        "wolverine": "Hugh Jackman",
+        "professor": "Patrick Stewart",
+        "others": 11,
+        "noMatch": 'should fail'
+      )
+
+      expect(cast.wolverine).to eq "Hugh Jackman"
+      expect(cast.professor).to eq "Patrick Stewart"
+      expect(cast.others).to eq 11
+      expect { cast.noMatch }.to raise_error(NoMethodError)
+    end
+
+    it "supports nested objects and arrays" do
+      cast_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/complex_cast.json'
+      end
+
+      cast = cast_record.new(
+        "wolverine": {
+          "firstName": "Hugh",
+          "lastName": "Jackman"
+        },
+        "professor": {
+          "firstName": "Patrick",
+          "lastName": "Stewart"
+        },
+        "others": 11,
+        "_updates": ["2018-06-17", "2018-06-18"],
+        "noMatch": 'should fail'
+      )
+
+      expect(cast.wolverine.firstName).to eq "Hugh"
+      expect(cast.wolverine.lastName).to eq "Jackman"
+      expect(cast.professor.firstName).to eq "Patrick"
+      expect(cast.professor.lastName).to eq "Stewart"
+      expect(cast._updates).to eq ["2018-06-17", "2018-06-18"]
+      expect(cast.others).to eq 11
+      expect { cast.noMatch }.to raise_error(NoMethodError)
+    end
+  end
+
   it "different records with different additionalProperties can co-exist" do
     location_record = Class.new(SchemaRecord::Base) do
       json_schema_file 'schemas/geo_location.json'

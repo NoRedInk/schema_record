@@ -104,7 +104,6 @@ Defining and initializing a SchemaRecord instance *does not* validate that the d
 
 ## Not Yet Supported
 - $ref
-- patternProperties
 - oneOf
 
 

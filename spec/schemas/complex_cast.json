@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "description": "The cast for a movie",
+    "type": "object",
+    "additionalProperties": false,
+    "patternProperties": {
+        "^[a-z]+$": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "firstName": { "type": "string" },
+                "lastName": { "type": "string" }
+            }
+        },
+        "^_.*": {
+            "type": "array",
+            "items": { "type": "string" }
+        }
+    },
+    "properties": {
+        "others": { "type": "string" }
+    }
+}

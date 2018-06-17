@@ -1,0 +1,11 @@
+{
+    "description": "The cast for a movie",
+    "type": "object",
+    "additionalProperties": false,
+    "patternProperties": {
+        "^[a-z]+$": { "type": "string" }
+    },
+    "properties": {
+        "others": { "type": "string" }
+    }
+}
