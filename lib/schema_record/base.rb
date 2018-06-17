@@ -4,13 +4,13 @@ module SchemaRecord
   class Base
     def initialize(**args)
       if additional_properties
-        singleton_class.define_attributes(args.keys)
-        args.each do |attr, value|
-          set_value(attr, value)
+        singleton_class.define_properties(args.keys)
+        args.each do |prop, value|
+          set_value(prop, value)
         end
       else
-        attributes.each do |attr|
-          set_value(attr, args[attr.to_sym])
+        properties.each do |prop|
+          set_value(prop, args[prop.to_sym])
         end
       end
     end
@@ -33,16 +33,16 @@ module SchemaRecord
       properties = schema['properties']
 
       if properties.is_a?(Hash)
-        define_attributes(properties.keys)
-        properties.each do |attr, spec|
+        define_properties(properties.keys)
+        properties.each do |prop, spec|
           Array(spec['type']).each do |type|
             case type
             when 'object'
-              nested_objects[attr] = Class.new(SchemaRecord::Base) do
+              nested_objects[prop] = Class.new(SchemaRecord::Base) do
                 json_schema_hash spec
               end
             when 'array'
-              array_schemas[attr] = Class.new(SchemaRecord::List) do
+              array_schemas[prop] = Class.new(SchemaRecord::List) do
                 json_schema_hash spec['items']
               end
             end
@@ -51,17 +51,17 @@ module SchemaRecord
       end
     end
 
-    def self.define_attributes(attrs)
-      @attributes = attrs
-      self.send :attr_reader, *attrs
+    def self.define_properties(props)
+      @properties = props
+      self.send :attr_reader, *props
     end
 
-    def self.attributes
-      @attributes
+    def self.properties
+      @properties
     end
 
-    def attributes
-      self.class.attributes
+    def properties
+      self.class.properties
     end
 
     def self.additional_properties
@@ -89,17 +89,17 @@ module SchemaRecord
     end
 
     private
-    def set_value(attr, arg)
+    def set_value(prop, arg)
       value =
-        if arg.is_a?(Hash) && nested_objects[attr.to_s]
-          nested_objects[attr.to_s].new arg
-        elsif arg.is_a?(Array) && array_schemas[attr.to_s]
-          arg.map { |item| array_schemas[attr.to_s].initialize_item item }
+        if arg.is_a?(Hash) && nested_objects[prop.to_s]
+          nested_objects[prop.to_s].new arg
+        elsif arg.is_a?(Array) && array_schemas[prop.to_s]
+          arg.map { |item| array_schemas[prop.to_s].initialize_item item }
         else
           arg
         end
 
-      self.instance_variable_set("@#{attr}", value)
+      self.instance_variable_set("@#{prop}", value)
     end
   end
 end
