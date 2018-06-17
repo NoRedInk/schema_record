@@ -1,4 +1,5 @@
 {
+    "$schema": "http://json-schema.org/schema#",
     "description": "A poorly designed schema for a board game",
     "type": "object",
     "additionalProperties": false,
