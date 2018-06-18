@@ -84,7 +84,7 @@ data = {
     "birthdate" => "August 26, 1918"
 }
 
-kat = TwinterPost.new data
+kat = Person.new data
 
 # attributes defined in the schema
 kat.name      # ==> "Katherine Johnson"
