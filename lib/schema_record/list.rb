@@ -1,10 +1,10 @@
 module SchemaRecord
   class List
-    def self.json_schema_hash(schema, root_schema)
+    def self.json_schema_hash(schema, context)
       object_proc = -> (object) { @record = object }
       array_proc  = -> (array ) {  @array = array  }
 
-      Base.process_schema(schema, root_schema, object_proc, array_proc)
+      Base.process_schema(schema, context, object_proc, array_proc)
     end
 
     def self.initialize_item(item)

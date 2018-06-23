@@ -25,18 +25,12 @@ module SchemaRecord
     end
 
     def self.json_schema_file(file_path)
-      fullpath = File.join SchemaRecord.config.root_path, file_path
-      schema_string = File.read(fullpath)
-      schema = JSON.parse(schema_string)
+      context = Context.new file_path, SchemaRecord.config.root_path
 
-      unless Array(schema['type']).include? 'object'
-        raise InvalidSchemaError.new("top-level of json schema must be type: object")
-      end
-
-      json_schema_hash(schema, schema)
+      json_schema_hash(context.full_schema, context)
     end
 
-    def self.json_schema_hash(schema, root_schema)
+    def self.json_schema_hash(schema, context)
       # if schema['$ref']
       #   ref_schema = Reference.fetch_schema(schema['$ref'], root_schema)
       #   return json_schema_hash ref_schema, root_schema # todo: root_schema is the wrong context here
@@ -52,7 +46,7 @@ module SchemaRecord
           object_proc = -> (object) { nested_objects[prop] = object }
           array_proc  = -> (array ) {  nested_arrays[prop] = array  }
 
-          process_schema(spec, root_schema, object_proc, array_proc)
+          process_schema(spec, context, object_proc, array_proc)
         end
       end
 
@@ -68,17 +62,17 @@ module SchemaRecord
             nested_arrays_by_pattern[pattern] = array
           }
 
-          process_schema(spec, root_schema, object_proc, array_proc)
+          process_schema(spec, context, object_proc, array_proc)
         end
       end
     end
 
-    def self.process_schema(schema, root_schema, object_proc, array_proc)
+    def self.process_schema(schema, context, object_proc, array_proc)
       return unless schema.is_a?(Hash)
 
       if schema['$ref']
-        ref_schema = Reference.fetch_schema(schema['$ref'], root_schema)
-        return process_schema(ref_schema, root_schema, object_proc, array_proc) # todo: root_schema may not be the correct context
+        ref_schema, ref_context = Reference.fetch_schema(schema['$ref'], context)
+        return process_schema(ref_schema, ref_context, object_proc, array_proc)
       end
 
       Array(schema['type']).each do |type|
@@ -86,13 +80,13 @@ module SchemaRecord
         when 'object'
           object_proc.call(
             Class.new(SchemaRecord::Base) do
-              json_schema_hash schema, root_schema
+              json_schema_hash schema, context
             end
           )
         when 'array'
           array_proc.call(
             Class.new(SchemaRecord::List) do
-              json_schema_hash schema['items'], root_schema
+              json_schema_hash schema['items'], context
             end
           )
         end

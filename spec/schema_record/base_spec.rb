@@ -7,14 +7,6 @@ RSpec.describe SchemaRecord::Base do
     end
   end
 
-  it "fails on definition if the schema isn't type: object" do
-    expect {
-      Class.new(SchemaRecord::Base) do
-        json_schema_file 'schemas/invalid_not_object.json'
-      end
-    }.to raise_error(SchemaRecord::InvalidSchemaError)
-  end
-
   it "can define a record with attributes that match the schema" do
     location_record = Class.new(SchemaRecord::Base) do
       json_schema_file 'schemas/geo_location.json'
@@ -304,26 +296,30 @@ RSpec.describe SchemaRecord::Base do
   end
 
   context "$ref" do
-    it "works when $ref refers to a part of the same file" do
-      customer_record = Class.new(SchemaRecord::Base) do
-        json_schema_file 'schemas/customer.json'
+    context "when $ref refers to a part of the same file" do
+      it "works " do
+        customer_record = Class.new(SchemaRecord::Base) do
+          json_schema_file 'schemas/customer.json'
+        end
+
+        customer = customer_record.new(
+          shipping_address: {
+            city: "New York",
+            state: "NY"
+          },
+          billing_address: {
+            city: "San Francisco",
+            state: "CA"
+          }
+        )
+
+        expect(customer.shipping_address.city).to eq "New York"
+        expect(customer.shipping_address.state).to eq "NY"
+        expect(customer.billing_address.city).to eq "San Francisco"
+        expect(customer.billing_address.state).to eq "CA"
       end
 
-      customer = customer_record.new(
-        shipping_address: {
-          city: "New York",
-          state: "NY"
-        },
-        billing_address: {
-          city: "San Francisco",
-          state: "CA"
-        }
-      )
-
-      expect(customer.shipping_address.city).to eq "New York"
-      expect(customer.shipping_address.state).to eq "NY"
-      expect(customer.billing_address.city).to eq "San Francisco"
-      expect(customer.billing_address.state).to eq "CA"
+      it "raises an exception when the path doesn't exist"
     end
 
     context "when $ref refers to a part of a different file" do
