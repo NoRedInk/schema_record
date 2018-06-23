@@ -1,17 +1,21 @@
 module SchemaRecord
   class List
-    def self.json_schema_hash(schema)
+    def self.json_schema_hash(schema, root_schema)
       return unless schema.is_a?(Hash)
+
+      # while schema['$ref']
+      #   schema = Reference.fetch_schema(schema['$ref'], root_schema) # todo: root_schema is the wrong context here
+      # end
 
       Array(schema['type']).each do |type|
         case type
         when 'object'
           @record = Class.new(SchemaRecord::Base) do
-            json_schema_hash schema
+            json_schema_hash schema, root_schema
           end
         when 'array'
           @array = Class.new(SchemaRecord::List) do
-            json_schema_hash schema['items']
+            json_schema_hash schema['items'], root_schema
           end
         end
       end

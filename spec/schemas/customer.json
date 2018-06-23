@@ -1,0 +1,20 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "definitions": {
+        "address": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "city":           { "type": "string" },
+                "state":          { "type": "string" }
+            }
+        }
+    },
+
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "billing_address": { "$ref": "#/definitions/address" },
+        "shipping_address": { "$ref": "#/definitions/address" }
+    }
+}

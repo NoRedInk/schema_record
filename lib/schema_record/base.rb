@@ -33,10 +33,15 @@ module SchemaRecord
         raise InvalidSchemaError.new("top-level of json schema must be type: object")
       end
 
-      json_schema_hash(schema)
+      json_schema_hash(schema, schema)
     end
 
-    def self.json_schema_hash(schema)
+    def self.json_schema_hash(schema, root_schema)
+      # if schema['$ref']
+      #   ref_schema = Reference.fetch_schema(schema['$ref'], root_schema)
+      #   return json_schema_hash ref_schema, root_schema # todo: root_schema is the wrong context here
+      # end
+
       @additional_properties = schema['additionalProperties'] != false
 
       props = schema['properties']
@@ -44,15 +49,19 @@ module SchemaRecord
       if props.is_a?(Hash)
         define_properties(props.keys)
         props.each do |prop, spec|
+          # while spec['$ref']
+          if spec['$ref']
+            spec = Reference.fetch_schema(spec['$ref'], root_schema) # todo: root_schema is only the correct context the first time through the loop
+          end
           Array(spec['type']).each do |type|
             case type
             when 'object'
               nested_objects[prop] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec
+                json_schema_hash spec, root_schema
               end
             when 'array'
               nested_arrays[prop] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items']
+                json_schema_hash spec['items'], root_schema
               end
             end
           end
@@ -68,11 +77,11 @@ module SchemaRecord
             case type
             when 'object'
               nested_objects_by_pattern[pattern] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec
+                json_schema_hash spec, root_schema
               end
             when 'array'
               nested_arrays_by_pattern[pattern] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items']
+                json_schema_hash spec['items'], root_schema
               end
             end
           end

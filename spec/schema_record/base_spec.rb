@@ -302,4 +302,37 @@ RSpec.describe SchemaRecord::Base do
       expect(jabberwocky.wabe[2].claws).to eq 'catch'
     end
   end
+
+  context "$ref" do
+    it "works when $ref refers to a part of the same file" do
+      customer_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/customer.json'
+      end
+
+      customer = customer_record.new(
+        shipping_address: {
+          city: "New York",
+          state: "NY"
+        },
+        billing_address: {
+          city: "San Francisco",
+          state: "CA"
+        }
+      )
+
+      expect(customer.shipping_address.city).to eq "New York"
+      expect(customer.shipping_address.state).to eq "NY"
+      expect(customer.billing_address.city).to eq "San Francisco"
+      expect(customer.billing_address.state).to eq "CA"
+    end
+
+    context "when $ref refers to a part of a different file" do
+      it "works"
+      context "and that has $refs as well" do
+        it "works"
+      end
+    end
+
+    it "works when the $ref path has escaped characters"
+  end
 end
