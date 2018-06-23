@@ -322,8 +322,35 @@ RSpec.describe SchemaRecord::Base do
       it "raises an exception when the path doesn't exist"
     end
 
-    context "when $ref refers to a part of a different file" do
-      it "works"
+    context "when $ref refers to a different file" do
+      it "works when referring to the whole file" do
+        family_record = Class.new(SchemaRecord::Base) do
+          json_schema_file 'schemas/family.json'
+        end
+
+        family = family_record.new(
+          guardians: [
+            {firstName: 'Bob', lastName: 'Belcher'},
+            {firstName: 'Linda', lastName: 'Belcher'}
+          ],
+          children: [
+            {firstName: 'Tina', lastName: 'Belcher'},
+            {firstName: 'Jean', lastName: 'Belcher'},
+            {firstName: 'Louise', lastName: 'Belcher'}
+          ]
+        )
+
+        expect(family.guardians[0].firstName).to eq 'Bob'
+        expect(family.guardians[1].firstName).to eq 'Linda'
+        expect(family.children[0].firstName).to eq 'Tina'
+        expect(family.children[1].firstName).to eq 'Jean'
+        expect(family.children[2].firstName).to eq 'Louise'
+        expect(family.guardians.map(&:lastName).uniq).to eq ['Belcher']
+        expect(family.children.map(&:lastName).uniq).to eq ['Belcher']
+      end
+
+      it "works when referring to a part of the other file"
+
       context "and that has $refs as well" do
         it "works"
       end

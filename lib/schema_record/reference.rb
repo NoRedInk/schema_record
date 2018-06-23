@@ -4,15 +4,19 @@ module SchemaRecord
   module Reference
     module_function
     def fetch_schema(path, context)
-      filename, _, property_path = path.partition('#')
-      case filename
+      file_path, _, property_path = path.partition('#')
+      case file_path
       when ''
         [
           fetch_local_schema(property_path, context.full_schema),
           context
         ]
       else
-        nil
+        new_context = Context.new file_path, context.cwd
+        [
+          fetch_local_schema(property_path, new_context.full_schema),
+          new_context
+        ]
       end
     end
 
