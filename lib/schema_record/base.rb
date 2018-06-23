@@ -49,22 +49,10 @@ module SchemaRecord
       if props.is_a?(Hash)
         define_properties(props.keys)
         props.each do |prop, spec|
-          # while spec['$ref']
-          if spec['$ref']
-            spec = Reference.fetch_schema(spec['$ref'], root_schema) # todo: root_schema is only the correct context the first time through the loop
-          end
-          Array(spec['type']).each do |type|
-            case type
-            when 'object'
-              nested_objects[prop] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec, root_schema
-              end
-            when 'array'
-              nested_arrays[prop] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items'], root_schema
-              end
-            end
-          end
+          object_proc = -> (object) { nested_objects[prop] = object }
+          array_proc  = -> (array ) {  nested_arrays[prop] = array  }
+
+          process_schema(spec, root_schema, object_proc, array_proc)
         end
       end
 
@@ -73,18 +61,40 @@ module SchemaRecord
       if pattern_props.is_a?(Hash)
         @pattern_properties = pattern_props.keys
         pattern_props.each do |pattern, spec|
-          Array(spec['type']).each do |type|
-            case type
-            when 'object'
-              nested_objects_by_pattern[pattern] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec, root_schema
-              end
-            when 'array'
-              nested_arrays_by_pattern[pattern] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items'], root_schema
-              end
+          object_proc = -> (object) {
+            nested_objects_by_pattern[pattern] = object
+          }
+          array_proc = -> (array) {
+            nested_arrays_by_pattern[pattern] = array
+          }
+
+          process_schema(spec, root_schema, object_proc, array_proc)
+        end
+      end
+    end
+
+    def self.process_schema(schema, root_schema, object_proc, array_proc)
+      return unless schema.is_a?(Hash)
+
+      if schema['$ref']
+        ref_schema = Reference.fetch_schema(schema['$ref'], root_schema)
+        return process_schema(ref_schema, root_schema, object_proc, array_proc) # todo: root_schema may not be the correct context
+      end
+
+      Array(schema['type']).each do |type|
+        case type
+        when 'object'
+          object_proc.call(
+            Class.new(SchemaRecord::Base) do
+              json_schema_hash schema, root_schema
             end
-          end
+          )
+        when 'array'
+          array_proc.call(
+            Class.new(SchemaRecord::List) do
+              json_schema_hash schema['items'], root_schema
+            end
+          )
         end
       end
     end
