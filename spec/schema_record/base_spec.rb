@@ -7,14 +7,6 @@ RSpec.describe SchemaRecord::Base do
     end
   end
 
-  it "fails on definition if the schema isn't type: object" do
-    expect {
-      Class.new(SchemaRecord::Base) do
-        json_schema_file 'schemas/invalid_not_object.json'
-      end
-    }.to raise_error(SchemaRecord::InvalidSchemaError)
-  end
-
   it "can define a record with attributes that match the schema" do
     location_record = Class.new(SchemaRecord::Base) do
       json_schema_file 'schemas/geo_location.json'
@@ -300,6 +292,140 @@ RSpec.describe SchemaRecord::Base do
 
       expect(jabberwocky.wabe[2].jaws).to eq 'bite'
       expect(jabberwocky.wabe[2].claws).to eq 'catch'
+    end
+  end
+
+  context "$ref" do
+    context "when $ref refers to a part of the same file" do
+      it "works " do
+        customer_record = Class.new(SchemaRecord::Base) do
+          json_schema_file 'schemas/customer.json'
+        end
+
+        customer = customer_record.new(
+          shipping_address: {
+            city: "New York",
+            state: "NY"
+          },
+          billing_address: {
+            city: "San Francisco",
+            state: "CA"
+          }
+        )
+
+        expect(customer.shipping_address.city).to eq "New York"
+        expect(customer.shipping_address.state).to eq "NY"
+        expect(customer.billing_address.city).to eq "San Francisco"
+        expect(customer.billing_address.state).to eq "CA"
+      end
+
+      it "raises an exception when the path doesn't exist" do
+        expect {
+          Class.new(SchemaRecord::Base) do
+            json_schema_file 'schemas/broken_ref.json'
+          end
+        }.to raise_error(ArgumentError)
+      end
+    end
+
+    context "when $ref refers to a different file" do
+      it "works when referring to the whole file" do
+        family_record = Class.new(SchemaRecord::Base) do
+          json_schema_file 'schemas/family.json'
+        end
+
+        family = family_record.new(
+          guardians: [
+            {firstName: 'Bob', lastName: 'Belcher'},
+            {firstName: 'Linda', lastName: 'Belcher'}
+          ],
+          children: [
+            {firstName: 'Tina', lastName: 'Belcher'},
+            {firstName: 'Jean', lastName: 'Belcher'},
+            {firstName: 'Louise', lastName: 'Belcher'}
+          ]
+        )
+
+        expect(family.guardians[0].firstName).to eq 'Bob'
+        expect(family.guardians[1].firstName).to eq 'Linda'
+        expect(family.children[0].firstName).to eq 'Tina'
+        expect(family.children[1].firstName).to eq 'Jean'
+        expect(family.children[2].firstName).to eq 'Louise'
+        expect(family.guardians.map(&:lastName).uniq).to eq ['Belcher']
+        expect(family.children.map(&:lastName).uniq).to eq ['Belcher']
+      end
+
+      it "works when referring to a part of the other file" do
+        location_record = Class.new(SchemaRecord::Base) do
+          json_schema_file 'schemas/location.json'
+        end
+
+        location = location_record.new(
+          name: 'NoRedInk',
+          address: {city: 'San Francisco', state: 'CA'}
+        )
+
+        expect(location.name).to eq 'NoRedInk'
+        expect(location.address.city).to eq 'San Francisco'
+        expect(location.address.state).to eq 'CA'
+      end
+
+      context "and that has $refs as well" do
+        it "works" do
+          sale_record = Class.new(SchemaRecord::Base) do
+            json_schema_file 'schemas/sale.json'
+          end
+
+          sale = sale_record.new(
+            buyer: {
+              shipping_address: {
+                city: "New York",
+                state: "NY"
+              },
+              billing_address: {
+                city: "San Francisco",
+                state: "CA"
+              }
+            },
+            seller: {
+              firstName: "Agatha",
+              lastName: "Christie"
+            },
+            location: {
+              name: 'NoRedInk',
+              address: {city: 'San Francisco', state: 'CA'}
+            }
+          )
+
+          expect(sale.buyer.shipping_address.city).to eq "New York"
+          expect(sale.buyer.shipping_address.state).to eq "NY"
+          expect(sale.buyer.billing_address.city).to eq "San Francisco"
+          expect(sale.buyer.billing_address.state).to eq "CA"
+          expect(sale.seller.firstName).to eq 'Agatha'
+          expect(sale.seller.lastName).to eq 'Christie'
+          expect(sale.location.name).to eq 'NoRedInk'
+          expect(sale.location.address.city).to eq 'San Francisco'
+          expect(sale.location.address.state).to eq 'CA'
+        end
+      end
+    end
+
+    it "works when the $ref path has escaped characters" do
+      escaped_ref_record = Class.new(SchemaRecord::Base) do
+        json_schema_file 'schemas/escaped_ref.json'
+      end
+
+      escaped = escaped_ref_record.new(
+        color: {
+          red: 10,
+          green: 80,
+          blue: 200
+        }
+      )
+
+      expect(escaped.color.red).to eq 10
+      expect(escaped.color.green).to eq 80
+      expect(escaped.color.blue).to eq 200
     end
   end
 end

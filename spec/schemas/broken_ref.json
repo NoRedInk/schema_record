@@ -1,0 +1,8 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "snowman": { "$ref": "#/definitions/snowman" }
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+
+    "def/n/t/ons": {
+        "~color~": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "red": { "type": "integer" },
+                "green": { "type": "integer" },
+                "blue": { "type": "integer" }
+            }
+        }
+    },
+
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "color": { "$ref": "#def~1n~1t~1ons/~0color~0" }
+    }
+}

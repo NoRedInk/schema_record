@@ -1,20 +1,10 @@
 module SchemaRecord
   class List
-    def self.json_schema_hash(schema)
-      return unless schema.is_a?(Hash)
+    def self.json_schema_hash(schema, context)
+      object_proc = -> (object) { @record = object }
+      array_proc  = -> (array ) {  @array = array  }
 
-      Array(schema['type']).each do |type|
-        case type
-        when 'object'
-          @record = Class.new(SchemaRecord::Base) do
-            json_schema_hash schema
-          end
-        when 'array'
-          @array = Class.new(SchemaRecord::List) do
-            json_schema_hash schema['items']
-          end
-        end
-      end
+      Base.process_schema(schema, context, object_proc, array_proc)
     end
 
     def self.initialize_item(item)

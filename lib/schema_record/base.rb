@@ -25,18 +25,12 @@ module SchemaRecord
     end
 
     def self.json_schema_file(file_path)
-      fullpath = File.join SchemaRecord.config.root_path, file_path
-      schema_string = File.read(fullpath)
-      schema = JSON.parse(schema_string)
+      context = Context.new file_path, SchemaRecord.config.root_path
 
-      unless Array(schema['type']).include? 'object'
-        raise InvalidSchemaError.new("top-level of json schema must be type: object")
-      end
-
-      json_schema_hash(schema)
+      json_schema_hash(context.full_schema, context)
     end
 
-    def self.json_schema_hash(schema)
+    def self.json_schema_hash(schema, context)
       @additional_properties = schema['additionalProperties'] != false
 
       props = schema['properties']
@@ -44,18 +38,10 @@ module SchemaRecord
       if props.is_a?(Hash)
         define_properties(props.keys)
         props.each do |prop, spec|
-          Array(spec['type']).each do |type|
-            case type
-            when 'object'
-              nested_objects[prop] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec
-              end
-            when 'array'
-              nested_arrays[prop] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items']
-              end
-            end
-          end
+          object_proc = -> (object) { nested_objects[prop] = object }
+          array_proc  = -> (array ) {  nested_arrays[prop] = array  }
+
+          process_schema(spec, context, object_proc, array_proc)
         end
       end
 
@@ -64,18 +50,40 @@ module SchemaRecord
       if pattern_props.is_a?(Hash)
         @pattern_properties = pattern_props.keys
         pattern_props.each do |pattern, spec|
-          Array(spec['type']).each do |type|
-            case type
-            when 'object'
-              nested_objects_by_pattern[pattern] = Class.new(SchemaRecord::Base) do
-                json_schema_hash spec
-              end
-            when 'array'
-              nested_arrays_by_pattern[pattern] = Class.new(SchemaRecord::List) do
-                json_schema_hash spec['items']
-              end
+          object_proc = -> (object) {
+            nested_objects_by_pattern[pattern] = object
+          }
+          array_proc = -> (array) {
+            nested_arrays_by_pattern[pattern] = array
+          }
+
+          process_schema(spec, context, object_proc, array_proc)
+        end
+      end
+    end
+
+    def self.process_schema(schema, context, object_proc, array_proc)
+      return unless schema.is_a?(Hash)
+
+      if schema['$ref']
+        ref_schema, ref_context = Reference.fetch_schema(schema['$ref'], context)
+        return process_schema(ref_schema, ref_context, object_proc, array_proc)
+      end
+
+      Array(schema['type']).each do |type|
+        case type
+        when 'object'
+          object_proc.call(
+            Class.new(SchemaRecord::Base) do
+              json_schema_hash schema, context
             end
-          end
+          )
+        when 'array'
+          array_proc.call(
+            Class.new(SchemaRecord::List) do
+              json_schema_hash schema['items'], context
+            end
+          )
         end
       end
     end

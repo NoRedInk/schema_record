@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "guardians": {
+            "type": "array",
+            "items": { "$ref": "person.json" }
+        },
+        "children": {
+            "type": "array",
+            "items": { "$ref": "person.json" }
+        }
+    }
+}
