@@ -25,6 +25,13 @@ module SchemaRecord
       properties = property_path.split('/')
       properties.shift if property_path[0] == '/'
 
+      # unescape path
+      properties.map do |prop|
+        prop.gsub!('~0', '~')
+        prop.gsub!('~1','/')
+      end
+
+      # find the schema at the end of the path
       properties.reduce(full_schema) do |schema, prop|
         if schema && schema.has_key?(prop)
           schema[prop]

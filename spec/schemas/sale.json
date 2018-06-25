@@ -1,0 +1,10 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "buyer": { "$ref": "customer.json" },
+        "seller": { "$ref": "person.json" },
+        "location": { "$ref": "location.json" }
+    }
+}
