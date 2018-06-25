@@ -31,11 +31,6 @@ module SchemaRecord
     end
 
     def self.json_schema_hash(schema, context)
-      # if schema['$ref']
-      #   ref_schema = Reference.fetch_schema(schema['$ref'], root_schema)
-      #   return json_schema_hash ref_schema, root_schema # todo: root_schema is the wrong context here
-      # end
-
       @additional_properties = schema['additionalProperties'] != false
 
       props = schema['properties']
